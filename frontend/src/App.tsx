@@ -57,8 +57,8 @@ const App: React.FC = () => {
         shape.y,
         shape.color,
         shape.size,
-        shape.endX,
-        shape.endY
+        shape.endX !== undefined ? [shape.endX] : [],
+        shape.endY !== undefined ? [shape.endY] : []
       );
       if ('ok' in result) {
         const newShape = { ...shape, id: BigInt(result.ok) };
@@ -84,8 +84,8 @@ const App: React.FC = () => {
         shape.x,
         shape.y,
         shape.size,
-        shape.endX,
-        shape.endY
+        shape.endX !== undefined ? [shape.endX] : [],
+        shape.endY !== undefined ? [shape.endY] : []
       );
       if ('ok' in result) {
         setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? shape : s));
