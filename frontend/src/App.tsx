@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [startX, setStartX] = useState(0);
   const [startY, setStartY] = useState(0);
   const [originalPosition, setOriginalPosition] = useState<{x: number, y: number} | null>(null);
+  const [resizeStartSize, setResizeStartSize] = useState(0);
 
   useEffect(() => {
     fetchShapes();
@@ -103,7 +104,7 @@ const App: React.FC = () => {
       setError('Failed to update shape. Please try again.');
       // Revert the change
       if (originalPosition) {
-        setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? {...s, x: originalPosition.x, y: originalPosition.y} : s));
+        setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? {...s, x: originalPosition.x, y: originalPosition.y, size: resizeStartSize} : s));
       }
     }
   };
@@ -121,6 +122,7 @@ const App: React.FC = () => {
 
     if (clickedShape) {
       setOriginalPosition({x: clickedShape.x, y: clickedShape.y});
+      setResizeStartSize(clickedShape.size);
       if (isNearEdge(x, y, clickedShape)) {
         setIsResizing(true);
         setTempShape(clickedShape);
@@ -164,7 +166,7 @@ const App: React.FC = () => {
     } else if (isResizing) {
       const dx = x - tempShape.x;
       const dy = y - tempShape.y;
-      const newSize = Math.sqrt(dx * dx + dy * dy) * 2;
+      const newSize = Math.max(10, Math.sqrt(dx * dx + dy * dy) * 2);
       setTempShape({ ...tempShape, size: newSize });
     } else if (isMovingEndpoint && tempShape.shapeType === 'line') {
       setTempShape({ ...tempShape, endX: x, endY: y });
@@ -188,11 +190,12 @@ const App: React.FC = () => {
     setIsMovingEndpoint(false);
     setTempShape(null);
     setOriginalPosition(null);
+    setResizeStartSize(0);
   };
 
   const handleMouseLeave = () => {
-    if (isMoving && tempShape && originalPosition) {
-      setShapes(prevShapes => prevShapes.map(s => s.id === tempShape.id ? {...s, x: originalPosition.x, y: originalPosition.y} : s));
+    if ((isMoving || isResizing) && tempShape && originalPosition) {
+      setShapes(prevShapes => prevShapes.map(s => s.id === tempShape.id ? {...s, x: originalPosition.x, y: originalPosition.y, size: resizeStartSize} : s));
     }
     setIsDrawing(false);
     setIsMoving(false);
@@ -200,6 +203,7 @@ const App: React.FC = () => {
     setIsMovingEndpoint(false);
     setTempShape(null);
     setOriginalPosition(null);
+    setResizeStartSize(0);
   };
 
   const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
