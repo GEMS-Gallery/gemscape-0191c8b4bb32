@@ -24,7 +24,7 @@ const App: React.FC = () => {
   const [isMoving, setIsMoving] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
-  const [activeEndpoint, setActiveEndpoint] = useState<EndpointType>(null);
+  const [activeEndpoint, setActiveEndpoint] = useState<{ id: bigint; type: EndpointType }>({ id: BigInt(-1), type: null });
   const [hoveredEndpoint, setHoveredEndpoint] = useState<{ id: bigint; type: EndpointType } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -136,7 +136,7 @@ const App: React.FC = () => {
         const endpoint = isNearEndpoint(x, y, clickedShape);
         if (endpoint) {
           setIsMovingEndpoint(true);
-          setActiveEndpoint(endpoint);
+          setActiveEndpoint({ id: clickedShape.id, type: endpoint });
           setTempShape(clickedShape);
           if (endpoint === 'start') {
             setFixedEndpoint({x: clickedShape.endX!, y: clickedShape.endY!});
@@ -185,9 +185,9 @@ const App: React.FC = () => {
       const newSize = Math.max(10, Math.sqrt(dx * dx + dy * dy) * 2);
       setTempShape({ ...tempShape, size: newSize });
     } else if (isMovingEndpoint && tempShape && tempShape.shapeType === 'line' && fixedEndpoint) {
-      if (activeEndpoint === 'start') {
+      if (activeEndpoint.type === 'start') {
         setTempShape({ ...tempShape, x, y, endX: fixedEndpoint.x, endY: fixedEndpoint.y });
-      } else if (activeEndpoint === 'end') {
+      } else if (activeEndpoint.type === 'end') {
         setTempShape({ ...tempShape, x: fixedEndpoint.x, y: fixedEndpoint.y, endX: x, endY: y });
       }
     } else {
@@ -195,9 +195,9 @@ const App: React.FC = () => {
       let foundHoveredEndpoint = false;
       for (const shape of shapes) {
         if (shape.shapeType === 'line') {
-          const startEndpoint = isNearEndpoint(x, y, shape);
-          if (startEndpoint) {
-            setHoveredEndpoint({ id: shape.id, type: startEndpoint });
+          const endpoint = isNearEndpoint(x, y, shape);
+          if (endpoint) {
+            setHoveredEndpoint({ id: shape.id, type: endpoint });
             foundHoveredEndpoint = true;
             break;
           }
@@ -225,7 +225,7 @@ const App: React.FC = () => {
     setIsMoving(false);
     setIsResizing(false);
     setIsMovingEndpoint(false);
-    setActiveEndpoint(null);
+    setActiveEndpoint({ id: BigInt(-1), type: null });
     setTempShape(null);
     setOriginalPosition(null);
     setResizeStartSize(0);
@@ -241,7 +241,7 @@ const App: React.FC = () => {
     setIsMoving(false);
     setIsResizing(false);
     setIsMovingEndpoint(false);
-    setActiveEndpoint(null);
+    setActiveEndpoint({ id: BigInt(-1), type: null });
     setTempShape(null);
     setOriginalPosition(null);
     setResizeStartSize(0);
@@ -349,12 +349,12 @@ const App: React.FC = () => {
           return (
             <>
               <div key={shape.id.toString()} className="shape" style={style} />
-              {(hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'start') || isMovingEndpoint ? (
+              {((hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'start') || (activeEndpoint.id === shape.id && activeEndpoint.type === 'start')) && (
                 <div className="line-endpoint" style={{ left: `${shape.x}px`, top: `${shape.y}px`, transform: 'translate(-50%, -50%)' }} />
-              ) : null}
-              {(hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'end') || isMovingEndpoint ? (
+              )}
+              {((hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'end') || (activeEndpoint.id === shape.id && activeEndpoint.type === 'end')) && (
                 <div className="line-endpoint" style={{ left: `${shape.endX}px`, top: `${shape.endY}px`, transform: 'translate(-50%, -50%)' }} />
-              ) : null}
+              )}
             </>
           );
         }
