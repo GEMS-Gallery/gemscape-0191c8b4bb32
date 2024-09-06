@@ -58,9 +58,12 @@ const App: React.FC = () => {
         shape.endX,
         shape.endY
       );
-      setShapes([...shapes, { ...shape, id: BigInt(id) }]);
+      const newShape = { ...shape, id: BigInt(id) };
+      setShapes(prevShapes => [...prevShapes, newShape]);
+      return newShape;
     } catch (error) {
       console.error('Error adding shape:', error);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -77,7 +80,7 @@ const App: React.FC = () => {
         shape.endX,
         shape.endY
       );
-      setShapes(shapes.map(s => s.id === shape.id ? shape : s));
+      setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? shape : s));
     } catch (error) {
       console.error('Error updating shape:', error);
     } finally {
@@ -136,12 +139,15 @@ const App: React.FC = () => {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = async () => {
     if (tempShape) {
       if (isDrawing && tempShape.id === BigInt(0)) {
-        addShape(tempShape);
+        const newShape = await addShape(tempShape);
+        if (newShape) {
+          setShapes(prevShapes => [...prevShapes, newShape]);
+        }
       } else {
-        updateShape(tempShape);
+        await updateShape(tempShape);
       }
     }
     setIsDrawing(false);
