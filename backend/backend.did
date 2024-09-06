@@ -1,0 +1,15 @@
+type Shape = 
+ record {
+   color: text;
+   id: nat;
+   shapeType: text;
+   x: float64;
+   y: float64;
+ };
+service : {
+  addShape: (text, float64, float64, text) -> (nat);
+  deleteShape: (nat) -> (bool);
+  getCanvas: () -> (vec Shape) query;
+  moveShape: (nat, float64, float64) -> (bool);
+  updateCanvas: (vec Shape) -> (bool);
+}
