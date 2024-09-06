@@ -13,6 +13,9 @@ const theme = createTheme({
       main: '#03DAC6',
     },
   },
+  typography: {
+    fontFamily: 'Roboto, Arial, sans-serif',
+  },
 });
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
