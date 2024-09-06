@@ -147,7 +147,7 @@ const App: React.FC = () => {
           setTempShape(clickedShape);
         }
       }
-    } else {
+    } else if (!isMovingEndpoint) {
       const newShape: Shape = {
         id: BigInt(0),
         shapeType: selectedShape,
@@ -328,6 +328,13 @@ const App: React.FC = () => {
           style.top = `${shape.y}px`;
           style.transform = `rotate(${angle}deg)`;
           style.transformOrigin = 'left center';
+          return (
+            <>
+              <div key={shape.id.toString()} className="shape" style={style} />
+              <div className="line-endpoint" style={{ left: `${shape.x}px`, top: `${shape.y}px`, transform: 'translate(-50%, -50%)' }} />
+              <div className="line-endpoint" style={{ left: `${shape.endX}px`, top: `${shape.endY}px`, transform: 'translate(-50%, -50%)' }} />
+            </>
+          );
         }
         break;
       default:
