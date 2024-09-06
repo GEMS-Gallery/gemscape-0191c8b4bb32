@@ -269,8 +269,6 @@ const App: React.FC = () => {
   const renderShape = (shape: Shape) => {
     const style: React.CSSProperties = {
       position: 'absolute',
-      left: `${shape.x}px`,
-      top: `${shape.y}px`,
       backgroundColor: shape.color,
     };
 
@@ -279,11 +277,15 @@ const App: React.FC = () => {
         style.width = `${shape.size}px`;
         style.height = `${shape.size}px`;
         style.borderRadius = '50%';
+        style.left = `${shape.x}px`;
+        style.top = `${shape.y}px`;
         style.transform = 'translate(-50%, -50%)';
         break;
       case 'square':
         style.width = `${shape.size}px`;
         style.height = `${shape.size}px`;
+        style.left = `${shape.x}px`;
+        style.top = `${shape.y}px`;
         style.transform = 'translate(-50%, -50%)';
         break;
       case 'line':
@@ -294,6 +296,8 @@ const App: React.FC = () => {
           const angle = Math.atan2(dy, dx) * 180 / Math.PI;
           style.width = `${length}px`;
           style.height = '2px';
+          style.left = `${shape.x}px`;
+          style.top = `${shape.y}px`;
           style.transform = `rotate(${angle}deg)`;
           style.transformOrigin = 'left center';
         }
