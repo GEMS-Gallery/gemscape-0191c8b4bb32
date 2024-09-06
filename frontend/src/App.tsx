@@ -252,11 +252,6 @@ const App: React.FC = () => {
       const area2 = Math.abs((x1*(y-y3) + x*(y3-y1) + x3*(y1-y)) / 2);
       const area3 = Math.abs((x1*(y2-y) + x2*(y-y1) + x*(y1-y2)) / 2);
       return Math.abs(area - (area1 + area2 + area3)) < 0.1;
-    } else if (shape.shapeType === 'star') {
-      // Simplified star shape check
-      const dx = x - shape.x;
-      const dy = y - shape.y;
-      return dx * dx + dy * dy <= (shape.size / 2) * (shape.size / 2);
     } else if (shape.shapeType === 'line' && shape.endX !== undefined && shape.endY !== undefined) {
       const lineLength = Math.sqrt(Math.pow(shape.endX - shape.x, 2) + Math.pow(shape.endY - shape.y, 2));
       const d1 = Math.sqrt(Math.pow(x - shape.x, 2) + Math.pow(y - shape.y, 2));
@@ -267,7 +262,7 @@ const App: React.FC = () => {
   };
 
   const isNearEdge = (x: number, y: number, shape: Shape): boolean => {
-    if (shape.shapeType === 'circle' || shape.shapeType === 'square' || shape.shapeType === 'triangle' || shape.shapeType === 'star') {
+    if (shape.shapeType === 'circle' || shape.shapeType === 'square' || shape.shapeType === 'triangle') {
       const dx = x - shape.x;
       const dy = y - shape.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -320,18 +315,6 @@ const App: React.FC = () => {
         style.backgroundColor = 'transparent';
         style.left = `${shape.x}px`;
         style.top = `${shape.y - h / 2}px`;
-        break;
-      case 'star':
-        const starPoints = [
-          '0,50%', '30%,30%', '50%,0', '70%,30%', '100%,50%',
-          '70%,70%', '50%,100%', '30%,70%'
-        ].join(',');
-        style.width = `${shape.size}px`;
-        style.height = `${shape.size}px`;
-        style.clipPath = `polygon(${starPoints})`;
-        style.left = `${shape.x}px`;
-        style.top = `${shape.y}px`;
-        style.transform = 'translate(-50%, -50%)';
         break;
       case 'line':
         if (shape.endX !== undefined && shape.endY !== undefined) {
@@ -413,12 +396,6 @@ const App: React.FC = () => {
           onClick={() => setSelectedShape('triangle')}
         >
           Triangle
-        </Button>
-        <Button
-          variant={selectedShape === 'star' ? 'contained' : 'outlined'}
-          onClick={() => setSelectedShape('star')}
-        >
-          Star
         </Button>
         <Button
           variant={selectedShape === 'line' ? 'contained' : 'outlined'}
