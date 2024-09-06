@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
   const [activeEndpoint, setActiveEndpoint] = useState<EndpointType>(null);
+  const [hoveredEndpoint, setHoveredEndpoint] = useState<{ id: bigint; type: EndpointType } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [startX, setStartX] = useState(0);
@@ -165,29 +166,45 @@ const App: React.FC = () => {
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (!canvasRef.current || !tempShape) return;
+    if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    if (isDrawing) {
+    if (isDrawing && tempShape) {
       setTempShape({ ...tempShape, x, y });
-    } else if (isMoving) {
+    } else if (isMoving && tempShape) {
       const dx = x - startX;
       const dy = y - startY;
       setTempShape({ ...tempShape, x: tempShape.x + dx, y: tempShape.y + dy });
       setStartX(x);
       setStartY(y);
-    } else if (isResizing) {
+    } else if (isResizing && tempShape) {
       const dx = x - tempShape.x;
       const dy = y - tempShape.y;
       const newSize = Math.max(10, Math.sqrt(dx * dx + dy * dy) * 2);
       setTempShape({ ...tempShape, size: newSize });
-    } else if (isMovingEndpoint && tempShape.shapeType === 'line' && fixedEndpoint) {
+    } else if (isMovingEndpoint && tempShape && tempShape.shapeType === 'line' && fixedEndpoint) {
       if (activeEndpoint === 'start') {
         setTempShape({ ...tempShape, x, y, endX: fixedEndpoint.x, endY: fixedEndpoint.y });
       } else if (activeEndpoint === 'end') {
         setTempShape({ ...tempShape, x: fixedEndpoint.x, y: fixedEndpoint.y, endX: x, endY: y });
+      }
+    } else {
+      // Check for hovering over line endpoints
+      let foundHoveredEndpoint = false;
+      for (const shape of shapes) {
+        if (shape.shapeType === 'line') {
+          const startEndpoint = isNearEndpoint(x, y, shape);
+          if (startEndpoint) {
+            setHoveredEndpoint({ id: shape.id, type: startEndpoint });
+            foundHoveredEndpoint = true;
+            break;
+          }
+        }
+      }
+      if (!foundHoveredEndpoint) {
+        setHoveredEndpoint(null);
       }
     }
   };
@@ -229,6 +246,7 @@ const App: React.FC = () => {
     setOriginalPosition(null);
     setResizeStartSize(0);
     setFixedEndpoint(null);
+    setHoveredEndpoint(null);
   };
 
   const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
@@ -331,8 +349,12 @@ const App: React.FC = () => {
           return (
             <>
               <div key={shape.id.toString()} className="shape" style={style} />
-              <div className="line-endpoint" style={{ left: `${shape.x}px`, top: `${shape.y}px`, transform: 'translate(-50%, -50%)' }} />
-              <div className="line-endpoint" style={{ left: `${shape.endX}px`, top: `${shape.endY}px`, transform: 'translate(-50%, -50%)' }} />
+              {(hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'start') || isMovingEndpoint ? (
+                <div className="line-endpoint" style={{ left: `${shape.x}px`, top: `${shape.y}px`, transform: 'translate(-50%, -50%)' }} />
+              ) : null}
+              {(hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'end') || isMovingEndpoint ? (
+                <div className="line-endpoint" style={{ left: `${shape.endX}px`, top: `${shape.endY}px`, transform: 'translate(-50%, -50%)' }} />
+              ) : null}
             </>
           );
         }
