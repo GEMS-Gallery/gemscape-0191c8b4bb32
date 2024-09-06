@@ -19,10 +19,13 @@ const App: React.FC = () => {
   const [selectedShape, setSelectedShape] = useState<string>('circle');
   const [tempShape, setTempShape] = useState<Shape | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
 
   useEffect(() => {
     fetchShapes();
@@ -106,6 +109,9 @@ const App: React.FC = () => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
+    setStartX(x);
+    setStartY(y);
+
     const clickedShape = shapes.find(shape => isPointInShape(x, y, shape));
 
     if (clickedShape) {
@@ -116,7 +122,7 @@ const App: React.FC = () => {
         setIsMovingEndpoint(true);
         setTempShape(clickedShape);
       } else {
-        setIsDrawing(true);
+        setIsMoving(true);
         setTempShape(clickedShape);
       }
     } else {
@@ -143,6 +149,12 @@ const App: React.FC = () => {
 
     if (isDrawing) {
       setTempShape({ ...tempShape, x, y });
+    } else if (isMoving) {
+      const dx = x - startX;
+      const dy = y - startY;
+      setTempShape({ ...tempShape, x: tempShape.x + dx, y: tempShape.y + dy });
+      setStartX(x);
+      setStartY(y);
     } else if (isResizing) {
       const dx = x - tempShape.x;
       const dy = y - tempShape.y;
@@ -165,6 +177,7 @@ const App: React.FC = () => {
       }
     }
     setIsDrawing(false);
+    setIsMoving(false);
     setIsResizing(false);
     setIsMovingEndpoint(false);
     setTempShape(null);
