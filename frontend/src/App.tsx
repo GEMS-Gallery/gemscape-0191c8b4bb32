@@ -80,8 +80,12 @@ const App: React.FC = () => {
     }
   };
 
-  const updateShape = async (shape: Shape) => {
-    setLoading(true);
+  const updateShapeOptimistic = (updatedShape: Shape) => {
+    setShapes(prevShapes => prevShapes.map(s => s.id === updatedShape.id ? updatedShape : s));
+    updateShapeBackend(updatedShape);
+  };
+
+  const updateShapeBackend = async (shape: Shape) => {
     try {
       const result = await backend.updateShape(
         shape.id,
@@ -91,16 +95,16 @@ const App: React.FC = () => {
         shape.endX !== undefined ? [shape.endX] : [],
         shape.endY !== undefined ? [shape.endY] : []
       );
-      if ('ok' in result) {
-        setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? shape : s));
-      } else {
+      if ('err' in result) {
         throw new Error(result.err);
       }
     } catch (error) {
       console.error('Error updating shape:', error);
       setError('Failed to update shape. Please try again.');
-    } finally {
-      setLoading(false);
+      // Revert the change
+      if (originalPosition) {
+        setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? {...s, x: originalPosition.x, y: originalPosition.y} : s));
+      }
     }
   };
 
@@ -175,7 +179,7 @@ const App: React.FC = () => {
           setShapes(prevShapes => [...prevShapes, newShape]);
         }
       } else {
-        await updateShape(tempShape);
+        updateShapeOptimistic(tempShape);
       }
     }
     setIsDrawing(false);
@@ -281,6 +285,23 @@ const App: React.FC = () => {
     );
   };
 
+  const handleReset = async () => {
+    setLoading(true);
+    try {
+      const result = await backend.clearCanvas();
+      if ('ok' in result) {
+        setShapes([]);
+      } else {
+        throw new Error(result.err);
+      }
+    } catch (error) {
+      console.error('Error clearing canvas:', error);
+      setError('Failed to clear canvas. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       <Box
@@ -292,7 +313,7 @@ const App: React.FC = () => {
         onMouseLeave={handleMouseLeave}
         sx={{ width: '100%', height: '100%', position: 'relative' }}
       >
-        {shapes.filter(shape => !isMoving || shape.id !== tempShape?.id).map(renderShape)}
+        {shapes.map(renderShape)}
         {tempShape && renderShape(tempShape)}
       </Box>
       <Box className="toolbar">
@@ -313,6 +334,13 @@ const App: React.FC = () => {
           onClick={() => setSelectedShape('line')}
         >
           Line
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleReset}
+        >
+          Reset
         </Button>
       </Box>
       {loading && (

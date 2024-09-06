@@ -80,4 +80,11 @@ actor {
     Debug.print("Canvas updated with " # Nat.toText(newShapes.size()) # " shapes");
     #ok()
   };
+
+  public func clearCanvas(): async Result.Result<(), Text> {
+    shapes := [];
+    nextShapeId := 0;
+    Debug.print("Canvas cleared");
+    #ok()
+  };
 }

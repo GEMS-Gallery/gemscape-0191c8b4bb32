@@ -21,6 +21,7 @@ export interface _SERVICE {
     [string, number, number, string, number, [] | [number], [] | [number]],
     Result_1
   >,
+  'clearCanvas' : ActorMethod<[], Result>,
   'deleteShape' : ActorMethod<[bigint], Result>,
   'getCanvas' : ActorMethod<[], Array<Shape>>,
   'updateCanvas' : ActorMethod<[Array<Shape>], Result>,

@@ -25,6 +25,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_1],
         [],
       ),
+    'clearCanvas' : IDL.Func([], [Result], []),
     'deleteShape' : IDL.Func([IDL.Nat], [Result], []),
     'getCanvas' : IDL.Func([], [IDL.Vec(Shape)], ['query']),
     'updateCanvas' : IDL.Func([IDL.Vec(Shape)], [Result], []),
