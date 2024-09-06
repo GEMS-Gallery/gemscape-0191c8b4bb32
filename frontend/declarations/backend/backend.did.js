@@ -1,4 +1,6 @@
 export const idlFactory = ({ IDL }) => {
+  const Result_1 = IDL.Variant({ 'ok' : IDL.Nat, 'err' : IDL.Text });
+  const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   const Shape = IDL.Record({
     'x' : IDL.Float64,
     'y' : IDL.Float64,
@@ -20,12 +22,12 @@ export const idlFactory = ({ IDL }) => {
           IDL.Opt(IDL.Float64),
           IDL.Opt(IDL.Float64),
         ],
-        [IDL.Nat],
+        [Result_1],
         [],
       ),
-    'deleteShape' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteShape' : IDL.Func([IDL.Nat], [Result], []),
     'getCanvas' : IDL.Func([], [IDL.Vec(Shape)], ['query']),
-    'updateCanvas' : IDL.Func([IDL.Vec(Shape)], [IDL.Bool], []),
+    'updateCanvas' : IDL.Func([IDL.Vec(Shape)], [Result], []),
     'updateShape' : IDL.Func(
         [
           IDL.Nat,
@@ -35,7 +37,7 @@ export const idlFactory = ({ IDL }) => {
           IDL.Opt(IDL.Float64),
           IDL.Opt(IDL.Float64),
         ],
-        [IDL.Bool],
+        [Result],
         [],
       ),
   });

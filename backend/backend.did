@@ -9,12 +9,22 @@ type Shape =
    x: float64;
    y: float64;
  };
+type Result_1 = 
+ variant {
+   err: text;
+   ok: nat;
+ };
+type Result = 
+ variant {
+   err: text;
+   ok;
+ };
 service : {
   addShape: (text, float64, float64, text, float64, opt float64,
-   opt float64) -> (nat);
-  deleteShape: (nat) -> (bool);
+   opt float64) -> (Result_1);
+  deleteShape: (nat) -> (Result);
   getCanvas: () -> (vec Shape) query;
-  updateCanvas: (vec Shape) -> (bool);
+  updateCanvas: (vec Shape) -> (Result);
   updateShape: (nat, float64, float64, float64, opt float64, opt float64) ->
-   (bool);
+   (Result);
 }

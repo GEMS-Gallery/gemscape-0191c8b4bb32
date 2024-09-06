@@ -2,6 +2,10 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
+export type Result = { 'ok' : null } |
+  { 'err' : string };
+export type Result_1 = { 'ok' : bigint } |
+  { 'err' : string };
 export interface Shape {
   'x' : number,
   'y' : number,
@@ -15,14 +19,14 @@ export interface Shape {
 export interface _SERVICE {
   'addShape' : ActorMethod<
     [string, number, number, string, number, [] | [number], [] | [number]],
-    bigint
+    Result_1
   >,
-  'deleteShape' : ActorMethod<[bigint], boolean>,
+  'deleteShape' : ActorMethod<[bigint], Result>,
   'getCanvas' : ActorMethod<[], Array<Shape>>,
-  'updateCanvas' : ActorMethod<[Array<Shape>], boolean>,
+  'updateCanvas' : ActorMethod<[Array<Shape>], Result>,
   'updateShape' : ActorMethod<
     [bigint, number, number, number, [] | [number], [] | [number]],
-    boolean
+    Result
   >,
 }
 export declare const idlFactory: IDL.InterfaceFactory;

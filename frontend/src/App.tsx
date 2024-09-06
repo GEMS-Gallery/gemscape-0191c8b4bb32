@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, CircularProgress } from '@mui/material';
+import { Box, Button, CircularProgress, Snackbar } from '@mui/material';
 import { backend } from 'declarations/backend';
 
 type Shape = {
@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ const App: React.FC = () => {
       })));
     } catch (error) {
       console.error('Error fetching shapes:', error);
+      setError('Failed to fetch shapes. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -49,7 +51,7 @@ const App: React.FC = () => {
   const addShape = async (shape: Shape) => {
     setLoading(true);
     try {
-      const id = await backend.addShape(
+      const result = await backend.addShape(
         shape.shapeType,
         shape.x,
         shape.y,
@@ -58,11 +60,16 @@ const App: React.FC = () => {
         shape.endX,
         shape.endY
       );
-      const newShape = { ...shape, id: BigInt(id) };
-      setShapes(prevShapes => [...prevShapes, newShape]);
-      return newShape;
+      if ('ok' in result) {
+        const newShape = { ...shape, id: BigInt(result.ok) };
+        setShapes(prevShapes => [...prevShapes, newShape]);
+        return newShape;
+      } else {
+        throw new Error(result.err);
+      }
     } catch (error) {
       console.error('Error adding shape:', error);
+      setError('Failed to add shape. Please try again.');
       return null;
     } finally {
       setLoading(false);
@@ -72,7 +79,7 @@ const App: React.FC = () => {
   const updateShape = async (shape: Shape) => {
     setLoading(true);
     try {
-      await backend.updateShape(
+      const result = await backend.updateShape(
         shape.id,
         shape.x,
         shape.y,
@@ -80,9 +87,14 @@ const App: React.FC = () => {
         shape.endX,
         shape.endY
       );
-      setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? shape : s));
+      if ('ok' in result) {
+        setShapes(prevShapes => prevShapes.map(s => s.id === shape.id ? shape : s));
+      } else {
+        throw new Error(result.err);
+      }
     } catch (error) {
       console.error('Error updating shape:', error);
+      setError('Failed to update shape. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -283,6 +295,12 @@ const App: React.FC = () => {
           <CircularProgress />
         </Box>
       )}
+      <Snackbar
+        open={error !== null}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        message={error}
+      />
     </Box>
   );
 };

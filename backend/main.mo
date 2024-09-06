@@ -1,11 +1,10 @@
-import Bool "mo:base/Bool";
-
 import Array "mo:base/Array";
 import Float "mo:base/Float";
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Result "mo:base/Result";
 import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
 
 actor {
   type Shape = {
@@ -22,7 +21,7 @@ actor {
   stable var nextShapeId: Nat = 0;
   stable var shapes: [Shape] = [];
 
-  public func addShape(shapeType: Text, x: Float, y: Float, color: Text, size: Float, endX: ?Float, endY: ?Float): async Nat {
+  public func addShape(shapeType: Text, x: Float, y: Float, color: Text, size: Float, endX: ?Float, endY: ?Float): async Result.Result<Nat, Text> {
     let newShape: Shape = {
       id = nextShapeId;
       shapeType = shapeType;
@@ -35,13 +34,14 @@ actor {
     };
     nextShapeId += 1;
     shapes := Array.append(shapes, [newShape]);
-    newShape.id
+    Debug.print("Shape added: " # debug_show(newShape));
+    #ok(newShape.id)
   };
 
-  public func updateShape(id: Nat, x: Float, y: Float, size: Float, endX: ?Float, endY: ?Float): async Bool {
+  public func updateShape(id: Nat, x: Float, y: Float, size: Float, endX: ?Float, endY: ?Float): async Result.Result<(), Text> {
     let index = Array.indexOf<Shape>({ id = id; shapeType = ""; x = 0; y = 0; color = ""; size = 0; endX = null; endY = null }, shapes, func(a, b) { a.id == b.id });
     switch (index) {
-      case null { false };
+      case null { #err("Shape not found") };
       case (?i) {
         let updatedShape = {
           shapes[i] with
@@ -54,18 +54,20 @@ actor {
         shapes := Array.tabulate<Shape>(shapes.size(), func (j) {
           if (j == i) { updatedShape } else { shapes[j] }
         });
-        true
+        Debug.print("Shape updated: " # debug_show(updatedShape));
+        #ok()
       };
     }
   };
 
-  public func deleteShape(id: Nat): async Bool {
+  public func deleteShape(id: Nat): async Result.Result<(), Text> {
     let newShapes = Array.filter<Shape>(shapes, func(shape) { shape.id != id });
     if (newShapes.size() < shapes.size()) {
       shapes := newShapes;
-      true
+      Debug.print("Shape deleted: " # Nat.toText(id));
+      #ok()
     } else {
-      false
+      #err("Shape not found")
     }
   };
 
@@ -73,8 +75,9 @@ actor {
     shapes
   };
 
-  public func updateCanvas(newShapes: [Shape]): async Bool {
+  public func updateCanvas(newShapes: [Shape]): async Result.Result<(), Text> {
     shapes := newShapes;
-    true
+    Debug.print("Canvas updated with " # Nat.toText(newShapes.size()) # " shapes");
+    #ok()
   };
 }
