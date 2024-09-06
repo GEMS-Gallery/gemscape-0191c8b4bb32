@@ -111,12 +111,14 @@ const App: React.FC = () => {
     if (clickedShape) {
       if (isNearEdge(x, y, clickedShape)) {
         setIsResizing(true);
+        setTempShape(clickedShape);
       } else if (isNearEndpoint(x, y, clickedShape)) {
         setIsMovingEndpoint(true);
+        setTempShape(clickedShape);
       } else {
         setIsDrawing(true);
+        setTempShape(clickedShape);
       }
-      setTempShape(clickedShape);
     } else {
       const newShape: Shape = {
         id: BigInt(0),
@@ -169,15 +171,20 @@ const App: React.FC = () => {
   };
 
   const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
-    if (shape.shapeType === 'circle' || shape.shapeType === 'square') {
+    if (shape.shapeType === 'circle') {
       const dx = x - shape.x;
       const dy = y - shape.y;
       return dx * dx + dy * dy <= (shape.size / 2) * (shape.size / 2);
+    } else if (shape.shapeType === 'square') {
+      return x >= shape.x - shape.size / 2 &&
+             x <= shape.x + shape.size / 2 &&
+             y >= shape.y - shape.size / 2 &&
+             y <= shape.y + shape.size / 2;
     } else if (shape.shapeType === 'line' && shape.endX !== undefined && shape.endY !== undefined) {
       const lineLength = Math.sqrt(Math.pow(shape.endX - shape.x, 2) + Math.pow(shape.endY - shape.y, 2));
       const d1 = Math.sqrt(Math.pow(x - shape.x, 2) + Math.pow(y - shape.y, 2));
       const d2 = Math.sqrt(Math.pow(x - shape.endX, 2) + Math.pow(y - shape.endY, 2));
-      return Math.abs(d1 + d2 - lineLength) < 1;
+      return Math.abs(d1 + d2 - lineLength) < 5;
     }
     return false;
   };
@@ -203,6 +210,7 @@ const App: React.FC = () => {
 
   const renderShape = (shape: Shape) => {
     const style: React.CSSProperties = {
+      position: 'absolute',
       left: `${shape.x}px`,
       top: `${shape.y}px`,
       backgroundColor: shape.color,
@@ -213,10 +221,12 @@ const App: React.FC = () => {
         style.width = `${shape.size}px`;
         style.height = `${shape.size}px`;
         style.borderRadius = '50%';
+        style.transform = 'translate(-50%, -50%)';
         break;
       case 'square':
         style.width = `${shape.size}px`;
         style.height = `${shape.size}px`;
+        style.transform = 'translate(-50%, -50%)';
         break;
       case 'line':
         if (shape.endX !== undefined && shape.endY !== undefined) {
