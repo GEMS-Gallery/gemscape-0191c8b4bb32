@@ -304,6 +304,7 @@ const App: React.FC = () => {
       position: 'absolute',
       backgroundColor: shape.color,
       pointerEvents: 'none',
+      cursor: 'pointer',
     };
 
     switch (shape.shapeType) {
