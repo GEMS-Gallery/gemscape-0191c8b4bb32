@@ -31,6 +31,7 @@ const App: React.FC = () => {
   const [startY, setStartY] = useState(0);
   const [originalPosition, setOriginalPosition] = useState<{x: number, y: number} | null>(null);
   const [resizeStartSize, setResizeStartSize] = useState(0);
+  const [fixedEndpoint, setFixedEndpoint] = useState<{x: number, y: number} | null>(null);
 
   useEffect(() => {
     fetchShapes();
@@ -135,6 +136,11 @@ const App: React.FC = () => {
           setIsMovingEndpoint(true);
           setActiveEndpoint(endpoint);
           setTempShape(clickedShape);
+          if (endpoint === 'start') {
+            setFixedEndpoint({x: clickedShape.endX!, y: clickedShape.endY!});
+          } else {
+            setFixedEndpoint({x: clickedShape.x, y: clickedShape.y});
+          }
         } else {
           setIsMoving(true);
           setTempShape(clickedShape);
@@ -175,11 +181,11 @@ const App: React.FC = () => {
       const dy = y - tempShape.y;
       const newSize = Math.max(10, Math.sqrt(dx * dx + dy * dy) * 2);
       setTempShape({ ...tempShape, size: newSize });
-    } else if (isMovingEndpoint && tempShape.shapeType === 'line') {
+    } else if (isMovingEndpoint && tempShape.shapeType === 'line' && fixedEndpoint) {
       if (activeEndpoint === 'start') {
-        setTempShape({ ...tempShape, x, y });
+        setTempShape({ ...tempShape, x, y, endX: fixedEndpoint.x, endY: fixedEndpoint.y });
       } else if (activeEndpoint === 'end') {
-        setTempShape({ ...tempShape, endX: x, endY: y });
+        setTempShape({ ...tempShape, x: fixedEndpoint.x, y: fixedEndpoint.y, endX: x, endY: y });
       }
     }
   };
@@ -203,6 +209,7 @@ const App: React.FC = () => {
     setTempShape(null);
     setOriginalPosition(null);
     setResizeStartSize(0);
+    setFixedEndpoint(null);
   };
 
   const handleMouseLeave = () => {
@@ -217,6 +224,7 @@ const App: React.FC = () => {
     setTempShape(null);
     setOriginalPosition(null);
     setResizeStartSize(0);
+    setFixedEndpoint(null);
   };
 
   const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
