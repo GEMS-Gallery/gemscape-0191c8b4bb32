@@ -26,6 +26,7 @@ const App: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [startX, setStartX] = useState(0);
   const [startY, setStartY] = useState(0);
+  const [originalPosition, setOriginalPosition] = useState<{x: number, y: number} | null>(null);
 
   useEffect(() => {
     fetchShapes();
@@ -115,6 +116,7 @@ const App: React.FC = () => {
     const clickedShape = shapes.find(shape => isPointInShape(x, y, shape));
 
     if (clickedShape) {
+      setOriginalPosition({x: clickedShape.x, y: clickedShape.y});
       if (isNearEdge(x, y, clickedShape)) {
         setIsResizing(true);
         setTempShape(clickedShape);
@@ -181,6 +183,19 @@ const App: React.FC = () => {
     setIsResizing(false);
     setIsMovingEndpoint(false);
     setTempShape(null);
+    setOriginalPosition(null);
+  };
+
+  const handleMouseLeave = () => {
+    if (isMoving && tempShape && originalPosition) {
+      setShapes(prevShapes => prevShapes.map(s => s.id === tempShape.id ? {...s, x: originalPosition.x, y: originalPosition.y} : s));
+    }
+    setIsDrawing(false);
+    setIsMoving(false);
+    setIsResizing(false);
+    setIsMovingEndpoint(false);
+    setTempShape(null);
+    setOriginalPosition(null);
   };
 
   const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
@@ -274,10 +289,10 @@ const App: React.FC = () => {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         sx={{ width: '100%', height: '100%', position: 'relative' }}
       >
-        {shapes.map(renderShape)}
+        {shapes.filter(shape => !isMoving || shape.id !== tempShape?.id).map(renderShape)}
         {tempShape && renderShape(tempShape)}
       </Box>
       <Box className="toolbar">
