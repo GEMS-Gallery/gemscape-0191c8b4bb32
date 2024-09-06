@@ -14,30 +14,43 @@ actor {
     x: Float;
     y: Float;
     color: Text;
+    size: Float;
+    endX: ?Float;
+    endY: ?Float;
   };
 
   stable var nextShapeId: Nat = 0;
   stable var shapes: [Shape] = [];
 
-  public func addShape(shapeType: Text, x: Float, y: Float, color: Text): async Nat {
+  public func addShape(shapeType: Text, x: Float, y: Float, color: Text, size: Float, endX: ?Float, endY: ?Float): async Nat {
     let newShape: Shape = {
       id = nextShapeId;
       shapeType = shapeType;
       x = x;
       y = y;
       color = color;
+      size = size;
+      endX = endX;
+      endY = endY;
     };
     nextShapeId += 1;
     shapes := Array.append(shapes, [newShape]);
     newShape.id
   };
 
-  public func moveShape(id: Nat, x: Float, y: Float): async Bool {
-    let index = Array.indexOf<Shape>({ id = id; shapeType = ""; x = 0; y = 0; color = "" }, shapes, func(a, b) { a.id == b.id });
+  public func updateShape(id: Nat, x: Float, y: Float, size: Float, endX: ?Float, endY: ?Float): async Bool {
+    let index = Array.indexOf<Shape>({ id = id; shapeType = ""; x = 0; y = 0; color = ""; size = 0; endX = null; endY = null }, shapes, func(a, b) { a.id == b.id });
     switch (index) {
       case null { false };
       case (?i) {
-        let updatedShape = { shapes[i] with x = x; y = y };
+        let updatedShape = {
+          shapes[i] with
+          x = x;
+          y = y;
+          size = size;
+          endX = endX;
+          endY = endY;
+        };
         shapes := Array.tabulate<Shape>(shapes.size(), func (j) {
           if (j == i) { updatedShape } else { shapes[j] }
         });

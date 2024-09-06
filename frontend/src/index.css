@@ -21,6 +21,7 @@ code {
 .shape {
   position: absolute;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .shape:hover {

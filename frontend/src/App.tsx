@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, CircularProgress } from '@mui/material';
 import { backend } from 'declarations/backend';
 
@@ -8,12 +8,20 @@ type Shape = {
   x: number;
   y: number;
   color: string;
+  size: number;
+  endX?: number;
+  endY?: number;
 };
 
 const App: React.FC = () => {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedShape, setSelectedShape] = useState<string>('circle');
+  const [tempShape, setTempShape] = useState<Shape | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchShapes();
@@ -26,7 +34,10 @@ const App: React.FC = () => {
         ...shape,
         id: BigInt(shape.id),
         x: Number(shape.x),
-        y: Number(shape.y)
+        y: Number(shape.y),
+        size: Number(shape.size),
+        endX: shape.endX ? Number(shape.endX) : undefined,
+        endY: shape.endY ? Number(shape.endY) : undefined,
       })));
     } catch (error) {
       console.error('Error fetching shapes:', error);
@@ -35,16 +46,19 @@ const App: React.FC = () => {
     }
   };
 
-  const addShape = async (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
-
+  const addShape = async (shape: Shape) => {
     setLoading(true);
     try {
-      const id = await backend.addShape(selectedShape, x, y, color);
-      setShapes([...shapes, { id: BigInt(id), shapeType: selectedShape, x, y, color }]);
+      const id = await backend.addShape(
+        shape.shapeType,
+        shape.x,
+        shape.y,
+        shape.color,
+        shape.size,
+        shape.endX,
+        shape.endY
+      );
+      setShapes([...shapes, { ...shape, id: BigInt(id) }]);
     } catch (error) {
       console.error('Error adding shape:', error);
     } finally {
@@ -52,18 +66,121 @@ const App: React.FC = () => {
     }
   };
 
-  const moveShape = async (id: bigint, newX: number, newY: number) => {
+  const updateShape = async (shape: Shape) => {
     setLoading(true);
     try {
-      await backend.moveShape(id, newX, newY);
-      setShapes(shapes.map(shape =>
-        shape.id === id ? { ...shape, x: newX, y: newY } : shape
-      ));
+      await backend.updateShape(
+        shape.id,
+        shape.x,
+        shape.y,
+        shape.size,
+        shape.endX,
+        shape.endY
+      );
+      setShapes(shapes.map(s => s.id === shape.id ? shape : s));
     } catch (error) {
-      console.error('Error moving shape:', error);
+      console.error('Error updating shape:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const clickedShape = shapes.find(shape => isPointInShape(x, y, shape));
+
+    if (clickedShape) {
+      if (isNearEdge(x, y, clickedShape)) {
+        setIsResizing(true);
+      } else if (isNearEndpoint(x, y, clickedShape)) {
+        setIsMovingEndpoint(true);
+      } else {
+        setIsDrawing(true);
+      }
+      setTempShape(clickedShape);
+    } else {
+      const newShape: Shape = {
+        id: BigInt(0),
+        shapeType: selectedShape,
+        x,
+        y,
+        color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+        size: 50,
+        endX: selectedShape === 'line' ? x + 100 : undefined,
+        endY: selectedShape === 'line' ? y : undefined,
+      };
+      setTempShape(newShape);
+      setIsDrawing(true);
+    }
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRef.current || !tempShape) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    if (isDrawing) {
+      setTempShape({ ...tempShape, x, y });
+    } else if (isResizing) {
+      const dx = x - tempShape.x;
+      const dy = y - tempShape.y;
+      const newSize = Math.sqrt(dx * dx + dy * dy) * 2;
+      setTempShape({ ...tempShape, size: newSize });
+    } else if (isMovingEndpoint && tempShape.shapeType === 'line') {
+      setTempShape({ ...tempShape, endX: x, endY: y });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (tempShape) {
+      if (isDrawing && tempShape.id === BigInt(0)) {
+        addShape(tempShape);
+      } else {
+        updateShape(tempShape);
+      }
+    }
+    setIsDrawing(false);
+    setIsResizing(false);
+    setIsMovingEndpoint(false);
+    setTempShape(null);
+  };
+
+  const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
+    if (shape.shapeType === 'circle' || shape.shapeType === 'square') {
+      const dx = x - shape.x;
+      const dy = y - shape.y;
+      return dx * dx + dy * dy <= (shape.size / 2) * (shape.size / 2);
+    } else if (shape.shapeType === 'line' && shape.endX !== undefined && shape.endY !== undefined) {
+      const lineLength = Math.sqrt(Math.pow(shape.endX - shape.x, 2) + Math.pow(shape.endY - shape.y, 2));
+      const d1 = Math.sqrt(Math.pow(x - shape.x, 2) + Math.pow(y - shape.y, 2));
+      const d2 = Math.sqrt(Math.pow(x - shape.endX, 2) + Math.pow(y - shape.endY, 2));
+      return Math.abs(d1 + d2 - lineLength) < 1;
+    }
+    return false;
+  };
+
+  const isNearEdge = (x: number, y: number, shape: Shape): boolean => {
+    if (shape.shapeType === 'circle' || shape.shapeType === 'square') {
+      const dx = x - shape.x;
+      const dy = y - shape.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return Math.abs(distance - shape.size / 2) < 10;
+    }
+    return false;
+  };
+
+  const isNearEndpoint = (x: number, y: number, shape: Shape): boolean => {
+    if (shape.shapeType === 'line' && shape.endX !== undefined && shape.endY !== undefined) {
+      const d1 = Math.sqrt(Math.pow(x - shape.x, 2) + Math.pow(y - shape.y, 2));
+      const d2 = Math.sqrt(Math.pow(x - shape.endX, 2) + Math.pow(y - shape.endY, 2));
+      return d1 < 10 || d2 < 10;
+    }
+    return false;
   };
 
   const renderShape = (shape: Shape) => {
@@ -75,17 +192,25 @@ const App: React.FC = () => {
 
     switch (shape.shapeType) {
       case 'circle':
-        style.width = '50px';
-        style.height = '50px';
+        style.width = `${shape.size}px`;
+        style.height = `${shape.size}px`;
         style.borderRadius = '50%';
         break;
       case 'square':
-        style.width = '50px';
-        style.height = '50px';
+        style.width = `${shape.size}px`;
+        style.height = `${shape.size}px`;
         break;
       case 'line':
-        style.width = '100px';
-        style.height = '2px';
+        if (shape.endX !== undefined && shape.endY !== undefined) {
+          const dx = shape.endX - shape.x;
+          const dy = shape.endY - shape.y;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+          style.width = `${length}px`;
+          style.height = '2px';
+          style.transform = `rotate(${angle}deg)`;
+          style.transformOrigin = 'left center';
+        }
         break;
       default:
         return null;
@@ -96,8 +221,6 @@ const App: React.FC = () => {
         key={shape.id.toString()}
         className="shape"
         style={style}
-        draggable
-        onDragEnd={(e) => moveShape(shape.id, e.clientX, e.clientY)}
       />
     );
   };
@@ -106,10 +229,15 @@ const App: React.FC = () => {
     <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       <Box
         id="canvas-container"
-        onClick={addShape}
+        ref={canvasRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         sx={{ width: '100%', height: '100%', position: 'relative' }}
       >
         {shapes.map(renderShape)}
+        {tempShape && renderShape(tempShape)}
       </Box>
       <Box className="toolbar">
         <Button

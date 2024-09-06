@@ -6,15 +6,24 @@ export interface Shape {
   'x' : number,
   'y' : number,
   'id' : bigint,
+  'endX' : [] | [number],
+  'endY' : [] | [number],
   'color' : string,
+  'size' : number,
   'shapeType' : string,
 }
 export interface _SERVICE {
-  'addShape' : ActorMethod<[string, number, number, string], bigint>,
+  'addShape' : ActorMethod<
+    [string, number, number, string, number, [] | [number], [] | [number]],
+    bigint
+  >,
   'deleteShape' : ActorMethod<[bigint], boolean>,
   'getCanvas' : ActorMethod<[], Array<Shape>>,
-  'moveShape' : ActorMethod<[bigint, number, number], boolean>,
   'updateCanvas' : ActorMethod<[Array<Shape>], boolean>,
+  'updateShape' : ActorMethod<
+    [bigint, number, number, number, [] | [number], [] | [number]],
+    boolean
+  >,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];
