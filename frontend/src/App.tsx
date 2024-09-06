@@ -13,6 +13,8 @@ type Shape = {
   endY?: number;
 };
 
+type EndpointType = 'start' | 'end' | null;
+
 const App: React.FC = () => {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +24,7 @@ const App: React.FC = () => {
   const [isMoving, setIsMoving] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
+  const [activeEndpoint, setActiveEndpoint] = useState<EndpointType>(null);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [startX, setStartX] = useState(0);
@@ -126,12 +129,16 @@ const App: React.FC = () => {
       if (isNearEdge(x, y, clickedShape)) {
         setIsResizing(true);
         setTempShape(clickedShape);
-      } else if (isNearEndpoint(x, y, clickedShape)) {
-        setIsMovingEndpoint(true);
-        setTempShape(clickedShape);
       } else {
-        setIsMoving(true);
-        setTempShape(clickedShape);
+        const endpoint = isNearEndpoint(x, y, clickedShape);
+        if (endpoint) {
+          setIsMovingEndpoint(true);
+          setActiveEndpoint(endpoint);
+          setTempShape(clickedShape);
+        } else {
+          setIsMoving(true);
+          setTempShape(clickedShape);
+        }
       }
     } else {
       const newShape: Shape = {
@@ -169,7 +176,11 @@ const App: React.FC = () => {
       const newSize = Math.max(10, Math.sqrt(dx * dx + dy * dy) * 2);
       setTempShape({ ...tempShape, size: newSize });
     } else if (isMovingEndpoint && tempShape.shapeType === 'line') {
-      setTempShape({ ...tempShape, endX: x, endY: y });
+      if (activeEndpoint === 'start') {
+        setTempShape({ ...tempShape, x, y });
+      } else if (activeEndpoint === 'end') {
+        setTempShape({ ...tempShape, endX: x, endY: y });
+      }
     }
   };
 
@@ -188,19 +199,21 @@ const App: React.FC = () => {
     setIsMoving(false);
     setIsResizing(false);
     setIsMovingEndpoint(false);
+    setActiveEndpoint(null);
     setTempShape(null);
     setOriginalPosition(null);
     setResizeStartSize(0);
   };
 
   const handleMouseLeave = () => {
-    if ((isMoving || isResizing) && tempShape && originalPosition) {
+    if ((isMoving || isResizing || isMovingEndpoint) && tempShape && originalPosition) {
       setShapes(prevShapes => prevShapes.map(s => s.id === tempShape.id ? {...s, x: originalPosition.x, y: originalPosition.y, size: resizeStartSize} : s));
     }
     setIsDrawing(false);
     setIsMoving(false);
     setIsResizing(false);
     setIsMovingEndpoint(false);
+    setActiveEndpoint(null);
     setTempShape(null);
     setOriginalPosition(null);
     setResizeStartSize(0);
@@ -235,13 +248,14 @@ const App: React.FC = () => {
     return false;
   };
 
-  const isNearEndpoint = (x: number, y: number, shape: Shape): boolean => {
+  const isNearEndpoint = (x: number, y: number, shape: Shape): EndpointType => {
     if (shape.shapeType === 'line' && shape.endX !== undefined && shape.endY !== undefined) {
       const d1 = Math.sqrt(Math.pow(x - shape.x, 2) + Math.pow(y - shape.y, 2));
       const d2 = Math.sqrt(Math.pow(x - shape.endX, 2) + Math.pow(y - shape.endY, 2));
-      return d1 < 10 || d2 < 10;
+      if (d1 < 10) return 'start';
+      if (d2 < 10) return 'end';
     }
-    return false;
+    return null;
   };
 
   const renderShape = (shape: Shape) => {
