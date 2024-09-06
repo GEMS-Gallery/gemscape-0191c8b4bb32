@@ -114,6 +114,7 @@ const App: React.FC = () => {
   };
 
   const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
     if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -163,6 +164,7 @@ const App: React.FC = () => {
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
     if (!canvasRef.current || !tempShape) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -190,7 +192,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleMouseUp = async () => {
+  const handleMouseUp = async (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
     if (tempShape) {
       if (isDrawing && tempShape.id === BigInt(0)) {
         const newShape = await addShape(tempShape);
@@ -212,7 +215,8 @@ const App: React.FC = () => {
     setFixedEndpoint(null);
   };
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
     if ((isMoving || isResizing || isMovingEndpoint) && tempShape && originalPosition) {
       setShapes(prevShapes => prevShapes.map(s => s.id === tempShape.id ? {...s, x: originalPosition.x, y: originalPosition.y, size: resizeStartSize} : s));
     }
@@ -270,6 +274,7 @@ const App: React.FC = () => {
     const style: React.CSSProperties = {
       position: 'absolute',
       backgroundColor: shape.color,
+      pointerEvents: 'none',
     };
 
     switch (shape.shapeType) {
@@ -311,6 +316,7 @@ const App: React.FC = () => {
         key={shape.id.toString()}
         className="shape"
         style={style}
+        draggable="false"
       />
     );
   };
