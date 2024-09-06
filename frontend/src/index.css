@@ -4,8 +4,8 @@
 }
 
 @keyframes growIn {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
+  from { transform: translate(-50%, -50%) scale(0); }
+  to { transform: translate(-50%, -50%) scale(1); }
 }
 
 body {
@@ -50,6 +50,7 @@ code {
   cursor: pointer;
   transition: all 0.3s ease;
   animation: growIn 0.3s ease-out;
+  transform: translate(-50%, -50%);
 }
 
 .line-endpoint.disappearing {

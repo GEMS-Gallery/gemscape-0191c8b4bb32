@@ -351,10 +351,10 @@ const App: React.FC = () => {
             <>
               <div key={shape.id.toString()} className="shape" style={style} />
               {((hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'start') || (activeEndpoint.id === shape.id && activeEndpoint.type === 'start')) && (
-                <div className="line-endpoint" style={{ left: `${shape.x}px`, top: `${shape.y}px`, transform: 'translate(-50%, -50%)' }} />
+                <div className="line-endpoint" style={{ left: `${shape.x}px`, top: `${shape.y}px` }} />
               )}
               {((hoveredEndpoint?.id === shape.id && hoveredEndpoint?.type === 'end') || (activeEndpoint.id === shape.id && activeEndpoint.type === 'end')) && (
-                <div className="line-endpoint" style={{ left: `${shape.endX}px`, top: `${shape.endY}px`, transform: 'translate(-50%, -50%)' }} />
+                <div className="line-endpoint" style={{ left: `${shape.endX}px`, top: `${shape.endY}px` }} />
               )}
             </>
           );
