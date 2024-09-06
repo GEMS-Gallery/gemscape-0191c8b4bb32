@@ -14,6 +14,7 @@ type Shape = {
 };
 
 type EndpointType = 'start' | 'end' | null;
+type CornerType = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | null;
 
 const App: React.FC = () => {
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [isMovingEndpoint, setIsMovingEndpoint] = useState(false);
   const [activeEndpoint, setActiveEndpoint] = useState<{ id: bigint; type: EndpointType }>({ id: BigInt(-1), type: null });
   const [hoveredEndpoint, setHoveredEndpoint] = useState<{ id: bigint; type: EndpointType } | null>(null);
+  const [hoveredCorner, setHoveredCorner] = useState<CornerType>(null);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [startX, setStartX] = useState(0);
@@ -129,7 +131,7 @@ const App: React.FC = () => {
     if (clickedShape) {
       setOriginalPosition({x: clickedShape.x, y: clickedShape.y});
       setResizeStartSize(clickedShape.size);
-      if (isNearEdge(x, y, clickedShape)) {
+      if (isNearCorner(x, y, clickedShape)) {
         setIsResizing(true);
         setTempShape(clickedShape);
       } else {
@@ -191,6 +193,24 @@ const App: React.FC = () => {
         setTempShape({ ...tempShape, x: fixedEndpoint.x, y: fixedEndpoint.y, endX: x, endY: y });
       }
     } else {
+      // Check for hovering over shapes and corners
+      let foundHoveredShape = false;
+      for (const shape of shapes) {
+        if (isPointInShape(x, y, shape)) {
+          foundHoveredShape = true;
+          const corner = isNearCorner(x, y, shape);
+          if (corner) {
+            setHoveredCorner(corner);
+          } else {
+            setHoveredCorner(null);
+          }
+          break;
+        }
+      }
+      if (!foundHoveredShape) {
+        setHoveredCorner(null);
+      }
+
       // Check for hovering over line endpoints
       let foundHoveredEndpoint = false;
       for (const shape of shapes) {
@@ -247,6 +267,7 @@ const App: React.FC = () => {
     setResizeStartSize(0);
     setFixedEndpoint(null);
     setHoveredEndpoint(null);
+    setHoveredCorner(null);
   };
 
   const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
@@ -279,14 +300,16 @@ const App: React.FC = () => {
     return false;
   };
 
-  const isNearEdge = (x: number, y: number, shape: Shape): boolean => {
-    if (shape.shapeType === 'circle' || shape.shapeType === 'square' || shape.shapeType === 'triangle') {
-      const dx = x - shape.x;
-      const dy = y - shape.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      return Math.abs(distance - shape.size / 2) < 10;
+  const isNearCorner = (x: number, y: number, shape: Shape): CornerType => {
+    const cornerSize = 10; // Size of the corner area
+    if (shape.shapeType === 'square') {
+      const halfSize = shape.size / 2;
+      if (Math.abs(x - (shape.x - halfSize)) < cornerSize && Math.abs(y - (shape.y - halfSize)) < cornerSize) return 'topLeft';
+      if (Math.abs(x - (shape.x + halfSize)) < cornerSize && Math.abs(y - (shape.y - halfSize)) < cornerSize) return 'topRight';
+      if (Math.abs(x - (shape.x - halfSize)) < cornerSize && Math.abs(y - (shape.y + halfSize)) < cornerSize) return 'bottomLeft';
+      if (Math.abs(x - (shape.x + halfSize)) < cornerSize && Math.abs(y - (shape.y + halfSize)) < cornerSize) return 'bottomRight';
     }
-    return false;
+    return null;
   };
 
   const isNearEndpoint = (x: number, y: number, shape: Shape): EndpointType => {
@@ -299,12 +322,18 @@ const App: React.FC = () => {
     return null;
   };
 
+  const getCursorStyle = (shape: Shape): string => {
+    if (hoveredCorner) {
+      return hoveredCorner === 'topLeft' || hoveredCorner === 'bottomRight' ? 'nwse-resize' : 'nesw-resize';
+    }
+    return 'move';
+  };
+
   const renderShape = (shape: Shape) => {
     const style: React.CSSProperties = {
       position: 'absolute',
       backgroundColor: shape.color,
-      pointerEvents: 'none',
-      cursor: 'pointer',
+      cursor: getCursorStyle(shape),
     };
 
     switch (shape.shapeType) {
